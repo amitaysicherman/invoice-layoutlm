@@ -9,8 +9,10 @@ This project used to predict different fields in English invoices ('date', 'comp
 5. predict_examples.py - show an example of the model's prediction of some examples invoices.
 6. examples - invoices images and OCR examples.
 
-# How to use
-The function in predict.py get json input (see below), and returns the labels according to the model prediction.
+# How to use 
+1. Download pytorch_model.bin model from [here](https://drive.google.com/file/d/1-AK7k4TbHzqNPnhiEsXjyh71AWBMVfEL/view?usp=sharing), and put in into ```./models``` 
+2. Install requirements.txt
+3. Use The "main" function in predict.py. The function get the input using ```intpu()```  function (see input shape below), and returns the labels according to the model prediction.
 The labels shape is : 
 ```
 {
