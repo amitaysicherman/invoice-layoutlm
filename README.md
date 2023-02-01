@@ -2,21 +2,20 @@
 This project used to predict different fields in English invoices ('date', 'company,' 'address,' 'total') using the layoutLM model finetuning on the SROIE dataset.
 
 # Project structure
-1. layoutlm -code for layoutlm model
-2. model - pre-trained models
+1. layoutlm/ - code for layoutlm model
+2. model/ - pre-trained models
 3. fine_tune_layoutlm_on_sroie.ipynb - colab notebook used to finetuning.
 4. predict.py - the prediction code.
 5. predict_examples.py - show an example of the model's prediction of some examples invoices.
-6. examples - invoices images and OCR examples.
 
 # How to use 
 1. Download pytorch_model.bin model from [here](https://drive.google.com/file/d/1-AK7k4TbHzqNPnhiEsXjyh71AWBMVfEL/view?usp=sharing), and put in into ```./models``` 
 2. Install requirements.txt
-3. Use The "main" function in predict.py. The function get the input using ```intpu()```  function (see input shape below), and returns the labels according to the model prediction.
+3. Use The "main" function in predict.py. The function get the input using ```intput()```  function (see input shape below), and returns the labels according to the model prediction.
 The labels shape is : 
 ```
 {
-'date': [..], 
+'date': [], 
 'company': [], 
 'address': [], 
 'total': []
@@ -24,13 +23,12 @@ The labels shape is :
 ```
 
 
-
 # Prediction from input string
 The input string is one line json with the following shape:
 ```
 {
    "img_height": The height of the image,
-   "img_width": The widtt of the image,
+   "img_width": The width of the image,
    "tokens": List of tokens from the OCR.
 }
 ```
@@ -39,12 +37,12 @@ While each token in the list has the following shape:
 {
  "upper_left_x": X coordinate of the upper left corner.
  "upper_left_y": Y coordinate of the upper left corner. 
- "lower_right_x" X coordinate of the lower right corner.
- "lower_right_y" Y coordinate of the lower right corner.
+ "lower_right_x": X coordinate of the lower right corner.
+ "lower_right_y": Y coordinate of the lower right corner.
  "words": Words separated by a space
 }
 ```
-###All coordinates are not normalized after rotation of the image.
+### All coordinates are not normalized, and after rotating the image to the correct angle.
 
 # Input String Example
 
