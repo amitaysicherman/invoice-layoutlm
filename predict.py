@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import logging
 
 import numpy as np
 import torch
@@ -8,6 +9,8 @@ from transformers import BertTokenizer
 from layoutlm import LayoutlmConfig, LayoutlmForTokenClassification
 
 LABELS = ['date', 'company', 'address', 'total']
+max_position_embeddings = 512
+log = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -16,7 +19,7 @@ class LayoutLMInput:
     bbox: torch.LongTensor
 
 
-def load_models(device:torch.device):
+def load_models(device: torch.device):
     config = LayoutlmConfig.from_pretrained('model/config.json', num_labels=5, cache_dir=None)
 
     model = LayoutlmForTokenClassification.from_pretrained(f'model/pytorch_model.bin', from_tf=False, config=config,
@@ -45,12 +48,27 @@ def processing_ocr(ocr_lines, tokenizer, img_height, img_width, device):
         y_min = 1000 * (int(y0)) / img_height
         x_max = 1000 * (int(x2)) / img_width
         y_max = 1000 * (int(y2)) / img_height
+
+        if x_max <= x_min:
+            log.info(f"Illegal X coordinated ({x_min},{x_max}) for word {word}. skip word...")
+            continue
+        if y_max <= y_min:
+            log.info(f"Illegal y coordinated ({y_min},{y_max}) for word {word}. skip word...")
+            continue
+
         for id_ in word_tokens:
             seq_id_to_words[len(boxes)] = word
             boxes.append([x_min, y_min, x_max, y_max])
             input_ids.append(id_)
 
     input_ids = [101] + input_ids + [102]  # add start and end tokens.
+    if len(input_ids) > max_position_embeddings:
+        msg = (f"Invoice too long."
+               f"The max length is {max_position_embeddings} and current length is {len(input_ids)}"
+               f"Token list : {tokenizer.decode(input_ids)}")
+        log.error(msg)
+        return None, {}
+
     boxes = [[0, 0, 0, 0]] + boxes + [[1000, 1000, 1000, 1000]]  # add start and end tokens.
     input_ids = torch.LongTensor(input_ids).unsqueeze(0).to(device)
     boxes = torch.LongTensor(boxes).unsqueeze(0).to(device)
@@ -84,6 +102,7 @@ def check_input(input_ocr):
         assert 'lower_right_y' in token
         assert 'words' in token
 
+
 def main():
     input_ocr_str = input()
     input_ocr = json.loads(input_ocr_str)
@@ -94,6 +113,8 @@ def main():
     img_height, img_width = input_ocr["img_height"], input_ocr["img_width"]
 
     model_input, seq_id_to_words = processing_ocr(input_ocr["tokens"], tokenizer, img_height, img_width, device)
+    if model_input is None:
+        return {}
 
     outputs = model(
         input_ids=model_input.input_ids,
